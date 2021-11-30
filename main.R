@@ -1,6 +1,8 @@
 library(data.table)
 library(dplyr)
 library(plotly)
+library(zoo)
+library(ggplot2)
 
 dataset <- fread("owid-covid-data-USA.csv")
 columns <- c("date","total_deaths","new_deaths","total_cases","new_cases")
@@ -13,17 +15,50 @@ year <- as.numeric(format(d_col, "%Y"))
 
 data2 <- cbind(data2, day, month, year)
 
-############################# EDA #########################################
-temp = data2 %>%
-        select(day, total_deaths, new_deaths, month) %>%
-        filter(year==2021)
-
-plot_ly(temp, y = ~total_deaths, x = ~month, mode = 'lines', type = 'scatter')
 ####################### Missing values plot #################################
 
 new_columns = c("date","total_deaths","new_deaths","total_cases","new_cases", "day","month","year")
 sum_na = colSums(is.na(data2))
 temp = data.frame(sum_na)
-plot_ly(temp, x=new_columns, y=sum_na, type='bar')
+rownames(temp) = new_columns
 
-###########################################################################
+temp %>%
+  plot_ly(x=~new_columns,y=~sum_na, type='bar') %>%
+  layout(title = 'Missing values count')
+
+################ Applying rolling mean for new deaths and cases #######################
+data2 <- data2 %>%
+  dplyr::mutate(new_death_roll12 = zoo::rollmean(new_deaths,k=12, fill=NA)) %>%
+  dplyr::mutate(new_cases_roll12 = zoo::rollmean(new_cases,k=12, fill=NA))
+
+############################# EDA #########################################
+temp = data2 %>%
+        select(new_death_roll12, new_cases_roll12)
+
+row.names(temp) <- data2$date
+#plot(temp$new_deaths)
+n_days = 1:dim(temp)[1]
+deathsRoll12=temp$new_death_roll12
+casesRoll12 = temp$new_cases_roll12
+#plot_ly(temp,x=~n_days,y=~deathsRoll12, mode='lines', type='scatter', text= rownames(temp))
+data2 %>%
+  ggplot(aes(x=n_days, y=deathsRoll12, color='smoker')) +
+  geom_line() +
+  ggtitle("Rolling mean plot - New Deaths") +
+  xlab("Days Jan 2020 - Nov 2021") +
+  ylab("New Deaths")
+
+data2 %>%
+  ggplot(aes(x=n_days, y=casesRoll12)) +
+  geom_line(alpha=0.5) +
+  ggtitle("Rolling mean plot - New Cases") +
+  xlab("Days Jan 2020 - Nov 2021") +
+  ylab("New Cases")
+
+######################## Fill missing cells ########################################
+data2$total_deaths = ifelse(is.na(data2$total_deaths),
+                            0, data2$total_deaths)
+data2$new_deaths = ifelse(is.na(data2$new_deaths),
+                            0, data2$new_deaths)
+data2$new_cases = ifelse(is.na(data2$new_cases),
+                            0, data2$new_cases)
