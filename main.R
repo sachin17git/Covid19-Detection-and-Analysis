@@ -13,7 +13,7 @@ day <- as.numeric(format(d_col, "%d"))
 month <- as.numeric(format(d_col, "%m"))
 year <- as.numeric(format(d_col, "%Y"))
 
-data2 <- cbind(data2, day, month, year)
+data2 <- cbind(data2, d_col, day, month, year)
 
 ####################### Missing values plot #################################
 
@@ -35,7 +35,7 @@ data2 <- data2 %>%
 temp = data2 %>%
         select(new_death_roll12, new_cases_roll12)
 
-row.names(temp) <- data2$date
+row.names(temp) <- data2$d_col
 #plot(temp$new_deaths)
 n_days = 1:dim(temp)[1]
 deathsRoll12=temp$new_death_roll12
@@ -62,3 +62,10 @@ data2$new_deaths = ifelse(is.na(data2$new_deaths),
                             0, data2$new_deaths)
 data2$new_cases = ifelse(is.na(data2$new_cases),
                             0, data2$new_cases)
+
+######################### Prepare data for forecasting new deaths #####################
+training_data <- data2 %>%
+                select(new_deaths)
+
+row.names(training_data) = data2$d_col
+
