@@ -23,6 +23,6 @@ plot_ly(temp, y = ~total_deaths, x = ~month, mode = 'lines', type = 'scatter')
 new_columns = c("date","total_deaths","new_deaths","total_cases","new_cases", "day","month","year")
 sum_na = colSums(is.na(data2))
 temp = data.frame(sum_na)
-plot_ly(temp, x=new_columns, y=~sum_na, type='bar')
+plot_ly(temp, x=new_columns, y=sum_na, type='bar')
 ###########################################################################
 
