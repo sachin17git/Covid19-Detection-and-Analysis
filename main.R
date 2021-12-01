@@ -7,6 +7,7 @@ library(tsbox)
 library(ggfortify)
 library(forecast)
 library(tseries)
+library(prophet)
 
 dataset <- fread("owid-covid-data-USA.csv")
 columns <- c("date","total_deaths","new_deaths","total_cases","new_cases")
@@ -81,7 +82,7 @@ new_data_ts = ts(new_data, frequency = 365,
                  end = c(2021, as.numeric(format(inds[677],"%j"))))
 
 
-ts_ggplot(new_data_ts,xlab = "Timeline", ylab = "Deaths")
+ts_ggplot(new_data_ts, xlab = "Timeline", ylab = "Deaths")
 
 
 ################################# Making plot stationary ###########################
@@ -98,12 +99,12 @@ plot(stationaryTS, type="l", main="Differenced and Stationary")
 
 training_set = window(new_data_ts, start = c(2020, 22), end = c(2021, 302))
 #train_set_transf = BoxCox(training_set, lambda = BoxCox.lambda(training_set))
-validation_set = window(new_data_ts, start = c(2021, 303), end = c(2021, 332))
+validation_set = window(new_data_ts, start = c(2021, 302), end = c(2021, 332))
 #validation_set_transf = BoxCox(validation_set, lambda = BoxCox.lambda(validation_set))
 
 acf(new_data_ts)
 kpss.test(new_data_ts)
-adf.test(new_data_ts)
+adf.test(training_set)
 
 
 ############################## Arima model #####################################
@@ -134,3 +135,18 @@ forecast_1 = forecast(arima_1, h=30)
 acc_arima_1 = accuracy(f = forecast_1,x = validation_set)
 summary(acc_arima_1)
 autoplot(forecast_1,main = 'Forecast Test-Set',xlab = 'Deaths',ylab = 'Timeline')
+
+########################### Facebook Prophet model ##################################
+
+fb_frame = data2 %>%
+  select(d_col, new_deaths)
+
+fb_frame = rename(fb_frame, c(ds=d_col, y=new_deaths))
+m <- prophet(fb_frame, yearly.seasonality=TRUE)
+
+future = make_future_dataframe(m, periods = 31)
+fb_forecast = predict(m, future)
+fb_forecast1 = fb_forecast[c('ds','yhat')]#,'yhat_lower','yhat_upper')]
+
+plot(m, fb_forecast1, xlab = "Timeline",ylab = "Deaths")
+prophet_plot_components(m, fb_forecast)
