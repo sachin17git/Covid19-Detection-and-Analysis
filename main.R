@@ -5,6 +5,8 @@ library(zoo)
 library(ggplot2)
 library(tsbox)
 library(ggfortify)
+library(forecast)
+library(tseries)
 
 dataset <- fread("owid-covid-data-USA.csv")
 columns <- c("date","total_deaths","new_deaths","total_cases","new_cases")
@@ -78,20 +80,57 @@ new_data_ts = ts(new_data, frequency = 365,
                  start = c(2020, as.numeric(format(inds[1],"%j"))),
                  end = c(2021, as.numeric(format(inds[677],"%j"))))
 
-ts.plot(new_data_ts, xlab = "Timeline", ylab = "Deaths", color="red")
+
+ts_ggplot(new_data_ts,xlab = "Timeline", ylab = "Deaths")
+
+
+################################# Making plot stationary ###########################
+
+nsdiffs(new_data_ts)
+data_diff <- diff(new_data_ts, lag=frequency(new_data_ts), differences=1)
+plot(data_diff, type="l", main="Seasonally Differenced")
+
+ndiffs(data_diff)
+stationaryTS <- diff(data_diff, differences= 1)
+plot(stationaryTS, type="l", main="Differenced and Stationary")
+
+################################# Training and testing set #############################
 
 training_set = window(new_data_ts, start = c(2020, 22), end = c(2021, 302))
+#train_set_transf = BoxCox(training_set, lambda = BoxCox.lambda(training_set))
 validation_set = window(new_data_ts, start = c(2021, 303), end = c(2021, 332))
+#validation_set_transf = BoxCox(validation_set, lambda = BoxCox.lambda(validation_set))
+
 acf(new_data_ts)
+kpss.test(new_data_ts)
+adf.test(new_data_ts)
 
-############################## Auto regression model ##############################
 
-AR = arima(training_set, order = c(10,0,0)) # Tune the order.
+############################## Arima model #####################################
+
+AR = arima(training_set, order = c(5,1,7)) # Tune the order.
 print(AR)
 predict_AR = predict(AR, n.ahead = length(validation_set))
-#ts.plot(validation_set, xlab = "Timeline", ylab = "Deaths")
-#points(predict_AR$pred, type = "l", col=2, lty=2)
-#autoplot(validation_set)
-#autoplot(predict_AR$pred, ts.colour = "red")
-ts_plot(Validation=validation_set, Forecast=predict_AR$pred, title = "Forecasting on Test Set")
 
+# Plot - Training set with forecast.
+ts_ggplot(Training=ts(training_set[300:646], frequency = 365,
+                    start = c(2020, as.numeric(format(inds[300],"%j"))),
+                    end = c(2021, as.numeric(format(inds[646],"%j")))),
+          Forecast=predict_AR$pred,
+          title = "Time Series Forecasting",
+          ylab = "Deaths")
+
+# Closer look at forecast (validation vs forecast)
+ts_ggplot(Validation=validation_set,
+          Forecast=predict_AR$pred,
+          title = "Time Series Forecasting",
+          ylab = "Deaths")
+
+############################## Auto-Arima Model #######################################
+
+arima_1 = auto.arima(training_set)
+print(arima_1)
+forecast_1 = forecast(arima_1, h=30)
+acc_arima_1 = accuracy(f = forecast_1,x = validation_set)
+summary(acc_arima_1)
+autoplot(forecast_1,main = 'Forecast Test-Set',xlab = 'Deaths',ylab = 'Timeline')
