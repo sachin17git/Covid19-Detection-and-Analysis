@@ -78,7 +78,14 @@ new_data_ts = ts(new_data, frequency = 365,
 
 ts.plot(new_data_ts, xlab = "Timeline", ylab = "Deaths", color="red")
 
-training_set = window(new_data_ts, start = c(2020, 22), end = c(2021, 272))
-validation_set = window(new_data_ts, start = c(2021, 273), end = c(2021, 332))
+training_set = window(new_data_ts, start = c(2020, 22), end = c(2021, 302))
+validation_set = window(new_data_ts, start = c(2021, 303), end = c(2021, 332))
+acf(new_data_ts)
 
+############################## Auto regression model ##############################
 
+AR = arima(training_set, order = c(10,0,0)) # Tune the order.
+print(AR)
+predict_AR = predict(AR, n.ahead = length(validation_set))
+ts.plot(validation_set, xlab = "Timeline", ylab = "Deaths")
+points(predict_AR$pred, type = "l", col=2, lty=2)
