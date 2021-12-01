@@ -1,0 +1,155 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(lattice)
+library(GGally)
+library(caret)
+library(kernlab)
+```
+
+
+
+```{r}
+
+df <- read.csv('covid_19_data_set.csv')
+summary(df)
+
+newdata <- na.omit(df)
+str(newdata)
+summary(newdata)
+```
+
+```{r}
+sum(is.na(newdata))
+```
+
+```{r}
+```
+
+#Number of doses delivered
+
+```{r}
+
+
+newdata1  = newdata[-1,]
+
+p<-ggplot(data=newdata1, aes(x=Total.Doses.Delivered  ,y = region, fill = Total.Doses.Delivered)) +
+  geom_bar(stat = "identity") +
+   theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))
+p
+
+```
+
+#Number of doses administered 
+
+```{r}
+#install.packages("usmap")
+library(usmap) #import the package
+library(ggplot2)
+library(tidyverse)
+
+View(newdata1)
+
+plot_usmap(regions = "states") + 
+  labs(title = "U.S. States") + 
+  theme(panel.background=element_blank())
+
+mapdata <- map_data("state")
+View(mapdata)
+
+mapdata <- left_join(mapdata,newdata1,by = 'region')
+
+
+mapdata1 <- mapdata %>% filter(!is.na(mapdata$Total.Doses.Delivered))
+mapdata1
+
+map1 <- ggplot(mapdata1, aes(x = long, y = lat, group = group)) + 
+  geom_polygon(aes(fill = Total.Doses.Administered.by.State.where.Administered), color = "black") +
+theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))
+map1
+
+
+
+```
+
+```{r}
+p1<-ggplot(data=newdata1, aes(x=Total.Number.of.Janssen.doses.administered,y = region, fill = Total.Number.of.Janssen.doses.administered)) +
+  geom_bar(stat = "identity") 
+ theme(legend.text = element_text(size = 5))
+p1
+
+p2<-ggplot(data=newdata1, aes(x=Total.Number.of.Moderna.doses.administered ,y = region, fill = Total.Number.of.Moderna.doses.administered)) +
+  geom_bar(stat = "identity") 
+ theme(legend.text = element_text(size = 5))
+p2
+
+p3<-ggplot(data=newdata1, aes(x=Total.Number.of.Pfizer.doses.adminstered,y = region, fill = Total.Number.of.Janssen.doses.administered)) +
+  geom_bar(stat = "identity") 
+ theme(legend.text = element_text(size = 5))
+p3
+```
+```{r}
+library(reshape2)
+newdata2 <- newdata1[,c(1,25,26,27,28)]
+newdata2 <- newdata2.long<-melt(newdata2,id.vars="region",)
+
+ggplot(newdata2,aes(x=value,y=region,fill = variable))+
+  geom_bar(stat="identity",position="dodge",width = 1)+
+  theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))
+
+```
+
+
+```{r}
+library(reshape2)
+newdata3 <- newdata[1,c(1,2,5)]
+newdata3 <- newdata3.long<-melt(newdata3,id.vars="region",)
+ggplot(newdata3,aes(x=region,y=value,fill = variable))+
+  geom_bar(stat="identity",position="dodge",width = 1)+
+  theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))
+```
+
+
+```{r}
+library(reshape2)
+newdata4 <- newdata1[,c(1,9,13)]
+newdata4 <- newdata4.long<-melt(newdata4,id.vars="region",)
+ggplot(newdata4,aes(x=value,y=region,fill = variable))+
+  geom_bar(stat="identity",position="dodge",width = 1) +
+  theme(aspect.ratio=50/40,
+    legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))
+        
+```
+
+
+
