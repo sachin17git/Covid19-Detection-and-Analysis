@@ -113,19 +113,30 @@ AR = arima(training_set, order = c(5,1,7)) # Tune the order.
 print(AR)
 predict_AR = predict(AR, n.ahead = length(validation_set))
 
+library(Metrics)
+print(paste("MAE:",mae(validation_set, predict_AR$pred)))
+print(paste("MSE:",mse(validation_set, predict_AR$pred)))
+print(paste("RMSE:",rmse(validation_set, predict_AR$pred)))
+
+
+
+
+
 # Plot - Training set with forecast.
-ts_ggplot(Training=ts(training_set[300:646], frequency = 365,
-                    start = c(2020, as.numeric(format(inds[300],"%j"))),
+ts_ggplot(Training=ts(training_set[1:646], frequency = 365,
+                    start = c(2020, as.numeric(format(inds[1],"%j"))),
                     end = c(2021, as.numeric(format(inds[646],"%j")))),
           Forecast=predict_AR$pred,
-          title = "Time Series Forecasting",
+          title = "                                                          Time Series Forecasting - ARIMA",
           ylab = "Deaths")
 
 # Closer look at forecast (validation vs forecast)
 ts_ggplot(Validation=validation_set,
           Forecast=predict_AR$pred,
-          title = "Time Series Forecasting",
+          title = "                                                    Time Series Forecasting - November - Validation",
           ylab = "Deaths")
+
+
 
 ############################## Auto-Arima Model #######################################
 
@@ -142,11 +153,24 @@ fb_frame = data2 %>%
   select(d_col, new_deaths)
 
 fb_frame = rename(fb_frame, c(ds=d_col, y=new_deaths))
-m <- prophet(fb_frame, yearly.seasonality=TRUE)
 
-future = make_future_dataframe(m, periods = 31)
+fb_train = fb_frame[1:647]
+fb_test = fb_frame[647:677]
+
+m <- prophet(fb_train, seasonality.prior.scale = 0.1,
+             yearly.seasonality=TRUE,
+             changepoint.prior.scale = 0.01)
+
+future = make_future_dataframe(m, periods = 30)
 fb_forecast = predict(m, future)
 fb_forecast1 = fb_forecast[c('ds','yhat')]#,'yhat_lower','yhat_upper')]
 
 plot(m, fb_forecast1, xlab = "Timeline",ylab = "Deaths")
+
+# Plot forecast and test set.
+ts_ggplot(Forecast=ts(fb_forecast1$yhat[647:677]), Testset=ts(fb_test$y))
 prophet_plot_components(m, fb_forecast)
+
+print(paste("MAE:",mae(fb_test$y, fb_forecast1$yhat[647:677])))
+print(paste("MSE:",mse(fb_test$y, fb_forecast1$yhat[647:677])))
+print(paste("RMSE:",rmse(fb_test$y, fb_forecast1$yhat[647:677])))
