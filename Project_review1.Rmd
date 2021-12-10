@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 
-
+#importing of the libraries
 ```{r}
 library(data.table)
 library(ggplot2)
@@ -17,32 +17,31 @@ library(caret)
 library(kernlab)
 ```
 
-
-
+#importing the data
 ```{r}
 
 df <- read.csv('covid_19_data_set.csv')
 summary(df)
 
-newdata <- na.omit(df)
+newdata <- na.omit(df) #remove all the NA values
 str(newdata)
 summary(newdata)
 ```
 
-```{r}
-sum(is.na(newdata))
-```
+#to find the number of NA values 
 
 ```{r}
+sum(is.na(newdata))
 ```
 
 #Number of doses delivered
 
 ```{r}
 
-
+#removal of the first row
 newdata1  = newdata[-1,]
 
+#Plotting of the graph using GGPLOT
 p<-ggplot(data=newdata1, aes(x=Total.Doses.Delivered  ,y = region, fill = Total.Doses.Delivered)) +
   geom_bar(stat = "identity") +
    theme(legend.key.size = unit(1, 'cm'), 
@@ -63,20 +62,23 @@ library(ggplot2)
 library(tidyverse)
 
 View(newdata1)
-
-plot_usmap(regions = "states") + 
+#to get the USA map outline
+plot_usmap(regions = "states") +  
   labs(title = "U.S. States") + 
   theme(panel.background=element_blank())
 
+#to fetch the coordinates for all the state in the USA
 mapdata <- map_data("state")
 View(mapdata)
 
+#merging the mapdata and the database for vaccines
 mapdata <- left_join(mapdata,newdata1,by = 'region')
 
-
+#removal of NA values
 mapdata1 <- mapdata %>% filter(!is.na(mapdata$Total.Doses.Delivered))
 mapdata1
 
+#the Outline USA map is now filled with a gradient shade of blue color to depict the highest number of vaccine states. California (light blue) is the number of vacinnated state.
 map1 <- ggplot(mapdata1, aes(x = long, y = lat, group = group)) + 
   geom_polygon(aes(fill = Total.Doses.Administered.by.State.where.Administered), color = "black") +
 theme(legend.key.size = unit(1, 'cm'), 
@@ -92,29 +94,14 @@ map1
 
 ```
 
-```{r}
-p1<-ggplot(data=newdata1, aes(x=Total.Number.of.Janssen.doses.administered,y = region, fill = Total.Number.of.Janssen.doses.administered)) +
-  geom_bar(stat = "identity") 
- theme(legend.text = element_text(size = 5))
-p1
-
-p2<-ggplot(data=newdata1, aes(x=Total.Number.of.Moderna.doses.administered ,y = region, fill = Total.Number.of.Moderna.doses.administered)) +
-  geom_bar(stat = "identity") 
- theme(legend.text = element_text(size = 5))
-p2
-
-p3<-ggplot(data=newdata1, aes(x=Total.Number.of.Pfizer.doses.adminstered,y = region, fill = Total.Number.of.Janssen.doses.administered)) +
-  geom_bar(stat = "identity") 
- theme(legend.text = element_text(size = 5))
-p3
-```
 #comparisons of types of vaccinations with each state 
 
 ```{r}
 library(reshape2)
 newdata2 <- newdata1[,c(1,25,26,27,28)]
-newdata2 <- newdata2.long<-melt(newdata2,id.vars="region",)
+newdata2 <- newdata2.long<-melt(newdata2,id.vars="region",) #to change the shape of the dataframe
 
+#plotting of graph using GGPLOT2 
 ggplot(newdata2,aes(x=value,y=region,fill = variable))+
   geom_bar(stat="identity",position="dodge",width = 1)+
   theme(legend.key.size = unit(1, 'cm'), 
@@ -132,8 +119,9 @@ ggplot(newdata2,aes(x=value,y=region,fill = variable))+
 ```{r}
 library(reshape2)
 newdata3 <- newdata[1,c(1,2,5)]
-newdata3 <- newdata3.long<-melt(newdata3,id.vars="region",)
+newdata3 <- newdata3.long<-melt(newdata3,id.vars="region",) #to change the shape of the dataframe
 
+#plotting of graph using GGPLOT2 
 ggplot(newdata3,aes(x=region,y=value,fill = variable))+
   geom_bar(stat="identity",position="dodge",width = 1)+
   theme(legend.key.size = unit(1, 'cm'), 
@@ -150,8 +138,9 @@ ggplot(newdata3,aes(x=region,y=value,fill = variable))+
 ```{r}
 library(reshape2)
 newdata4 <- newdata1[,c(1,9,13)]
-newdata4 <- newdata4.long<-melt(newdata4,id.vars="region",)
+newdata4 <- newdata4.long<-melt(newdata4,id.vars="region",) #to change the shape of the dataframe
 
+#plotting of graph using GGPLOT2 
 ggplot(newdata4,aes(x=value,y=region,fill = variable))+
   geom_bar(stat="identity",position="dodge",width = 1) +
   theme(aspect.ratio=50/40,
