@@ -1,0 +1,157 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+#importing of the libraries
+```{r}
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(lattice)
+library(GGally)
+library(caret)
+library(kernlab)
+```
+
+#importing the data
+```{r}
+
+df <- read.csv('covid_19_vaccination.csv')
+summary(df)
+
+newdata <- na.omit(df) #remove all the NA values
+str(newdata)
+summary(newdata)
+```
+
+#to find the number of NA values 
+
+```{r}
+sum(is.na(newdata))
+```
+
+#Number of doses delivered
+
+```{r}
+
+#removal of the first row
+newdata1  = newdata[-1,]
+
+#Plotting of the graph using GGPLOT
+p<-ggplot(data=newdata1, aes(x=Total.Doses.Delivered  ,y = region, fill = Total.Doses.Delivered)) +
+  geom_bar(stat = "identity") +
+   theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))
+p
+
+```
+
+#Number of doses administered 
+
+```{r}
+#install.packages("usmap")
+library(usmap) #import the package
+library(ggplot2)
+library(tidyverse)
+
+View(newdata1)
+#to get the USA map outline
+plot_usmap(regions = "states") +  
+  labs(title = "U.S. States") + 
+  theme(panel.background=element_blank())
+
+#to fetch the coordinates for all the state in the USA
+mapdata <- map_data("state")
+View(mapdata)
+
+#merging the mapdata and the database for vaccines
+mapdata <- left_join(mapdata,newdata1,by = 'region')
+
+#removal of NA values
+mapdata1 <- mapdata %>% filter(!is.na(mapdata$Total.Doses.Delivered))
+mapdata1
+
+#the Outline USA map is now filled with a gradient shade of blue color to depict the highest number of vaccine states. California (light blue) is the number of vaccinnated state.
+map1 <- ggplot(mapdata1, aes(x = long, y = lat, group = group)) + 
+  geom_polygon(aes(fill = Total.Doses.Administered.by.State.where.Administered), color = "black") +
+theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4)) +
+  labs(title="Vaccination in each state of the USA")
+
+map1
+
+
+
+```
+
+#comparisons of types of vaccinations with each state 
+
+```{r}
+library(reshape2)
+newdata2 <- newdata1[,c(1,25,26,27,28)]
+newdata2 <- newdata2.long<-melt(newdata2,id.vars="region",) #to change the shape of the dataframe
+
+#plotting of graph using GGPLOT2 
+ggplot(newdata2,aes(x=value,y=region,fill = variable))+
+  geom_bar(stat="identity",position="dodge",width = 1)+
+  theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=5)) +
+  labs(title="Comparison of types of Vaccination taken in each states",
+        x ="count", y = "States")
+
+```
+
+#Total vaccination delivered vs vaccination administered
+
+```{r}
+library(reshape2)
+newdata3 <- newdata[1,c(1,2,5)]
+newdata3 <- newdata3.long<-melt(newdata3,id.vars="region",) #to change the shape of the dataframe
+
+#plotting of graph using GGPLOT2 
+ggplot(newdata3,aes(x=region,y=value,fill = variable))+
+  geom_bar(stat="identity",position="dodge",width = 1)+
+  theme(legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))+
+  labs(title="No. of Vaccinations Delivered and No. of Vaccinations in use",
+        x =" ", y = "count")
+```
+
+#One dose of vaccination vs two doses of vaccinations
+
+```{r}
+library(reshape2)
+newdata4 <- newdata1[,c(1,9,13)]
+newdata4 <- newdata4.long<-melt(newdata4,id.vars="region",) #to change the shape of the dataframe
+
+#plotting of graph using GGPLOT2 
+ggplot(newdata4,aes(x=value,y=region,fill = variable))+
+  geom_bar(stat="identity",position="dodge",width = 1) +
+  theme(aspect.ratio=50/40,
+    legend.key.size = unit(1, 'cm'), 
+        legend.key.height = unit(0.5, 'cm'), 
+        legend.key.width = unit(0.5, 'cm'), 
+        legend.title = element_text(size=5), 
+        legend.text = element_text(size=4))+
+  labs(title="Comparision of number of doses taken",
+        x ="count", y = "States")
+  
+        
+```
+
