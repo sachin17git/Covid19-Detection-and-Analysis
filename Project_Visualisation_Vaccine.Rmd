@@ -20,7 +20,7 @@ library(kernlab)
 #importing the data
 ```{r}
 
-df <- read.csv('covid_19_data_set.csv')
+df <- read.csv('covid_19_vaccination.csv')
 summary(df)
 
 newdata <- na.omit(df) #remove all the NA values
